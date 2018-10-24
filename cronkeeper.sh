@@ -3,10 +3,14 @@
 curr_user=$(whoami)
 cron_dir=$HOME/.cronkeeper
 
+check() {
+    
+}
+
 init() {
     if [ -d "$cron_dir" ]
     then    
-        echo "Cronkeeper repo already exists"
+        printf "Cronkeeper repo already exists\n"
     else
         ( mkdir $cron_dir && \
         cd $cron_dir && \
@@ -23,8 +27,8 @@ commit() {
     then
         ( cd $cron_dir && \ 
         exec git add /var/spool/cron/$curr_user && \
-        exec git commit -m "Modified on $(date)" )
-        echo "Changes committed to local repo!"
+        exec git commit -m "Modified on $(date)" ; \
+        printf "Changes committed to local repo!\n" )
     fi
 }
 
@@ -32,26 +36,26 @@ edit() {
     crontab -e
     if [ ! -d "$cron_dir"  ]
     then
-        echo "Git repo doesn't exist!\nMaking a new repo.."
+        printf "Git repo doesn't exist!\nMaking a new repo..\n"
         init
     fi
     commit
 }
 
 clean() {
-    echo "Are you sure? (y/N): "; 
+    printf "Are you sure? (y/N): "; 
     read ans
     if [ ! -z $ans ]  
     then
         if [ $ans == "y" ] || [ $ans == "Y" ]
         then
-            rm -r $cron_dir
-            echo "Repo removed!"
+            rm -rI $cron_dir
+            #printf "Repo removed!\n"
         else
-            echo "Repo not removed!"
+            printf "Repo not removed!\n"
         fi
     else    
-        echo "Repo not removed!"
+        printf "Repo not removed!\n"
     fi
 }
 
@@ -61,7 +65,7 @@ push() {
     then
         git push -u origin master
     else
-        echo "No remote repo configured"
+        printf "No remote repo configured\n"
     fi
 }
 
@@ -73,22 +77,27 @@ push-persistent() {
 add-remote() {
     if [ -d "$cron_dir" ]
     then
-        echo "Enter remote url: "
+        printf "Enter remote url: "
         read url
         (cd $cron_dir && exec git remote add origin $url)
     else
-        echo "Local git repo not initialized!"
+        printf "Local git repo not initialized!\n"
     fi
 }
 
 push-timer() {
-    sed '/usr/bin/cronkeeper/d' /var/spool/cron/$curr_user
-    def_cmd="01 01 * * * /usr/bin/cronkeeper push"
-    if [ -n $2 ] 
+    echo $curr_user
+    if  grep -q cronkeeper /var/spool/cron/"$curr_user" 
     then
-        def_cmd="$2 /usr/bin/cronkeeper push"
+        sed -i '/cronkeeper/d' /var/spool/cron/$curr_user
     fi
-    echo $def_cmd >> /var/spool/cron/$curr_user
+
+    if [ -z "$2" ] 
+    then
+        printf "01 01 * * * /usr/bin/cronkeeper push\n" >> /var/spool/cron/$curr_user 
+    else
+        printf "$2 /usr/bin/cronkeeper push\n" >> /var/spool/cron/$curr_user
+    fi 
 }
 
 case $1 in 
@@ -117,7 +126,7 @@ case $1 in
         add-remote
         ;;
     *)
-        echo "Incorrect usage!"
+        printf "Incorrect usage!\n"
 esac
     
 
